@@ -5,10 +5,6 @@ module "label_vpc" {
   name       = "vpc"
   attributes = ["main"]
 }
-provider "aws" {
-  region = "us-east-1"
-}
-
 resource "aws_vpc" "my_vpc" {
   cidr_block = "192.170.0.0/20"
   enable_dns_support = true
