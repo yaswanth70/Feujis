@@ -33,14 +33,5 @@ module "subnet_cidrs" {
   source          = "hashicorp/subnets/cidr"
   version         = "~> 1.0"
   networks        = var.networks
-networks = [
-  {
-    cidr_block        = "10.0.1.0/24"
-    availability_zone = "us-east-1a"
-  },
-  {
-    cidr_block        = "10.0.2.0/24"
-    availability_zone = "us-east-1b"
-  }
 }
 
