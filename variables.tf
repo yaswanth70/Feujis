@@ -1,38 +1,31 @@
-# Define variables
-variable "vpc_cidr_block" {
-  description = "CIDR block for the VPC"
-  default     = "10.0.0.0/16"
-}
-
 variable "aws_region" {
-  description = "The AWS region where resources will be created"
-  default     = "us-east-1"
+  description = "AWS region to use"
+  type        = string
+  default     = "us-west-1"
 }
 
-# Define networks variable for subnet_cidrs module
-variable "networks" {
-  description = "Networks to split into subnets"
-  type        = list(object({
-    cidr_block        = string
-    availability_zone = string
-  }))
+variable "aws_access_key" {
+  description = "AWS Access Key ID for the target AWS account"
+  type        = string
 }
 
-# Fetch available AZs
-data "aws_availability_zones" "available" {
-  state = "available"
+variable "aws_secret_key" {
+  description = "AWS Secret Key for the target AWS account"
+  type        = string
 }
 
-# Select an AZ
-locals {
-  selected_az = data.aws_availability_zones.available.names[0]
+variable "aws_session_token" {
+  description = "AWS Session Token for the target AWS account. Required only if authenticating using temporary credentials"
+  type        = string
+  default     = ""
 }
 
-# Use hashicorp/subnets/cidr module to calculate subnet CIDRs
-module "subnet_cidrs" {
-  source          = "hashicorp/subnets/cidr"
-  version         = "~> 1.0"
-  base_cidr_block = var.vpc_cidr_block  # Assuming VPC CIDR block as the base CIDR block
-  networks        = var.networks
+variable "vpc_cidr" {
+  description = "The IPv4 CIDR block to use for the VPC"
+  type        = string
+  default     = "192.170.0.0/20"
+  validation {
+    condition     = tonumber(split("/", var.vpc_cidr)[1]) <= 20 && tonumber(split("/", var.vpc_cidr)[1]) >= 16
+    error_message = "CIDR size must be at least /20 and no larger than /16"
+  }
 }
-
