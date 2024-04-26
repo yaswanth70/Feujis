@@ -32,6 +32,7 @@ locals {
 module "subnet_cidrs" {
   source          = "hashicorp/subnets/cidr"
   version         = "~> 1.0"
+  base_cidr_block = var.vpc_cidr_block  # Assuming VPC CIDR block as the base CIDR block
   networks        = var.networks
 }
 
