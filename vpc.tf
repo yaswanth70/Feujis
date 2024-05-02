@@ -1,47 +1,46 @@
-AWSTemplateFormatVersion: '2024-05-02'
-Description: Create a VPC with public and private subnets
+variable "aws_region" {
+  description = "AWS region to use"
+  type        = string
+}
 
-Parameters:
-  VpcCIDR:
-    Type: String
-    Default: "10.0.0.0/16"
-    Description: CIDR block for the VPC
+variable "vpc_cidr_block" {
+  description = "CIDR block for the VPC"
+  type        = string
+}
 
-Resources:
-  MyVPC1:
-    Type: AWS::EC2::VPC
-    Properties:
-      CidrBlock: !Ref VpcCIDR
+variable "subnet_cidr_prefix" {
+  description = "The prefix for the subnet CIDR block"
+  type        = number
+  default     = 24
+}
 
-  MyInternetGateway:
-    Type: AWS::EC2::InternetGateway
+resource "aws_vpc" "my_vpc" {
+  cidr_block = var.vpc_cidr_block
+}
 
-  AttachGateway:
-    Type: AWS::EC2::VPCGatewayAttachment
-    Properties:
-      VpcId: !Ref MyVPC1
-      InternetGatewayId: !Ref MyInternetGateway
+resource "aws_subnet" "public_subnet" {
+  vpc_id            = aws_vpc.my_vpc.id
+  cidr_block        = cidrsubnet(var.vpc_cidr_block, var.subnet_cidr_prefix, 0)
+  availability_zone = data.aws_availability_zones.available.names[0]
+  map_public_ip_on_launch = true
 
-  PublicSubnet:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref MyVPC1
-      CidrBlock: !Select [0, !Cidr [!Ref VpcCIDR, 8, 8]]
-      AvailabilityZone: !Select [0, !GetAZs !Ref "AWS::Region"]
-      MapPublicIpOnLaunch: true
+  tags = {
+    Name = "PublicSubnet"
+  }
+}
 
-  PrivateSubnet:
-    Type: AWS::EC2::Subnet
-    Properties:
-      VpcId: !Ref MyVPC1
-      CidrBlock: !Select [1, !Cidr [!Ref VpcCIDR, 8, 8]]
-      AvailabilityZone: !GetAtt PublicSubnet.AvailabilityZone
+resource "aws_subnet" "private_subnet" {
+  vpc_id            = aws_vpc.my_vpc.id
+  cidr_block        = cidrsubnet(var.vpc_cidr_block, var.subnet_cidr_prefix, 1)
+  availability_zone = data.aws_availability_zones.available.names[0]
 
-Outputs:
-  PublicSubnetId:
-    Description: Subnet ID of the public subnet
-    Value: !Ref PublicSubnet
+  tags = {
+    Name = "PrivateSubnet"
+  }
+}
 
-  PrivateSubnetId:
-    Description: Subnet ID of the private subnet
-    Value: !Ref PrivateSubnet
+data "aws_availability_zones" "available" {}
+
+provider "aws" {
+  region = var.aws_region
+}
