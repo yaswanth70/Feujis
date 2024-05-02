@@ -17,6 +17,9 @@ variable "subnet_cidr_prefix" {
 
 resource "aws_vpc" "my_vpc1" {
   cidr_block = var.vpc_cidr_block
+var.vpc_cidr_block
+  CIDR block for the VPC
+  Enter a value: 10.0.0.0/24
 }
 
 resource "aws_subnet" "public_subnet" {
