@@ -32,7 +32,7 @@ resource "aws_subnet" "public_subnet" {
 
 resource "aws_subnet" "private_subnet" {
   vpc_id            = aws_vpc.my_vpc1.id
-  cidr_block        = cidrsubnet(var.vpc_cidr_block, var.subnet_cidr_prefix, 0)
+  cidr_block        = cidrsubnet(var.vpc_cidr_block, var.subnet_cidr_prefix, 1)
   availability_zone = data.aws_availability_zones.available.names[0]
 
   tags = {
