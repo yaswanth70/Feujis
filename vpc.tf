@@ -8,7 +8,7 @@ Parameters:
     Description: CIDR block for the VPC
 
 Resources:
-  MyVPC:
+  MyVPC1:
     Type: AWS::EC2::VPC
     Properties:
       CidrBlock: !Ref VpcCIDR
@@ -19,13 +19,13 @@ Resources:
   AttachGateway:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
-      VpcId: !Ref MyVPC
+      VpcId: !Ref MyVPC1
       InternetGatewayId: !Ref MyInternetGateway
 
   PublicSubnet:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref MyVPC
+      VpcId: !Ref MyVPC1
       CidrBlock: !Select [0, !Cidr [!Ref VpcCIDR, 8, 8]]
       AvailabilityZone: !Select [0, !GetAZs !Ref "AWS::Region"]
       MapPublicIpOnLaunch: true
@@ -33,7 +33,7 @@ Resources:
   PrivateSubnet:
     Type: AWS::EC2::Subnet
     Properties:
-      VpcId: !Ref MyVPC
+      VpcId: !Ref MyVPC1
       CidrBlock: !Select [1, !Cidr [!Ref VpcCIDR, 8, 8]]
       AvailabilityZone: !GetAtt PublicSubnet.AvailabilityZone
 
