@@ -1,7 +1,7 @@
 variable "aws_region" {
   description = "AWS region to use"
   type        = string
-  default     = "us-east-1"
+  default     = "us-east-1" # Default region can be specified here if needed
 }
 
 variable "aws_access_key" {
@@ -20,12 +20,3 @@ variable "aws_session_token" {
   default     = ""
 }
 
-variable "vpc_cidr" {
-  description = "The IPv4 CIDR block to use for the VPC"
-  type        = string
-  default     = "192.170.0.0/20"
-  validation {
-    condition     = tonumber(split("/", var.vpc_cidr)[1]) <= 20 && tonumber(split("/", var.vpc_cidr)[1]) >= 16
-    error_message = "CIDR size must be at least /20 and no larger than /16"
-  }
-}
