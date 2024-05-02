@@ -1,82 +1,47 @@
-module "label_vpc" {
-  source     = "cloudposse/label/null"
-  version    = "0.25.0"
-  context    = module.base_label.context
-  name       = "vpc"
-  attributes = ["main"]
-}
-resource "aws_vpc" "my_vpc" {
-  cidr_block = "192.170.0.0/20"
-  enable_dns_support = true
-  enable_dns_hostnames = true
-  tags = {
-    Name = "MyVPC"
-    // Ensure to include additional required tags here
-  }
-}
+AWSTemplateFormatVersion: '2024-05-02'
+Description: Create a VPC with public and private subnets
 
-# Create two public subnets in the same availability zone.
-resource "aws_subnet" "public_subnet_1" {
-  vpc_id            = aws_vpc.my_vpc.id
-  cidr_block        = "192.170.1.0/24"
-  availability_zone = "us-east-1b"
-  map_public_ip_on_launch = true
+Parameters:
+  VpcCIDR:
+    Type: String
+    Default: "10.0.0.0/16"
+    Description: CIDR block for the VPC
 
-  tags = {
-    Name = "PublicSubnet-1"
-    // Include additional required tags here
-  }
-}
+Resources:
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCIDR
 
-resource "aws_subnet" "public_subnet_2" {
-  vpc_id            = aws_vpc.my_vpc.id
-  cidr_block        = "192.170.2.0/24"
-  availability_zone = "us-east-1c"
-  map_public_ip_on_launch = true
+  MyInternetGateway:
+    Type: AWS::EC2::InternetGateway
 
-  tags = {
-    Name = "PublicSubnet-2"
-    // Include additional required tags here
-  }
-}
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref MyVPC
+      InternetGatewayId: !Ref MyInternetGateway
 
-# Create an Internet Gateway and attach it to the VPC
-resource "aws_internet_gateway" "my_igw" {
-  vpc_id = aws_vpc.my_vpc.id
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      CidrBlock: !Select [0, !Cidr [!Ref VpcCIDR, 8, 8]]
+      AvailabilityZone: !Select [0, !GetAZs !Ref "AWS::Region"]
+      MapPublicIpOnLaunch: true
 
-  tags = {
-    Name = "MyIGW"
-    // Include additional required tags here
-  }
-}
+  PrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref MyVPC
+      CidrBlock: !Select [1, !Cidr [!Ref VpcCIDR, 8, 8]]
+      AvailabilityZone: !GetAtt PublicSubnet.AvailabilityZone
 
-# Create a public route table and add a default route to the Internet Gateway
-resource "aws_route_table" "public_route_table" {
-  vpc_id = aws_vpc.my_vpc.id
+Outputs:
+  PublicSubnetId:
+    Description: Subnet ID of the public subnet
+    Value: !Ref PublicSubnet
 
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.my_igw.id
-  }
-
-  tags = {
-    Name = "PublicRouteTable"
-    // Include additional required tags here
-  }
-}
-
-# Associate the public route table with the public subnets
-resource "aws_route_table_association" "public_rta_1" {
-  subnet_id      = aws_subnet.public_subnet_1.id
-  route_table_id = aws_route_table.public_route_table.id
-}
-
-resource "aws_route_table_association" "public_rta_2" {
-  subnet_id      = aws_subnet.public_subnet_2.id
-  route_table_id = aws_route_table.public_route_table.id
-}
-
-
-# =========================
-# Create your subnets here
-# =========================
+  PrivateSubnetId:
+    Description: Subnet ID of the private subnet
+    Value: !Ref PrivateSubnet
