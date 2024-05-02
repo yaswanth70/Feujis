@@ -6,12 +6,8 @@ variable "aws_region" {
 variable "vpc_cidr_block" {
   description = "CIDR block for the VPC"
   type        = string
-}
-
-variable "subnet_cidr_prefix" {
-  description = "The prefix for the subnet CIDR block"
-  type        = number
-  default     = 
+# Example input value for VPC CIDR block
+vpc_cidr_block = "10.0.0.0/16"
 }
 
 resource "aws_vpc" "my_vpc1" {
