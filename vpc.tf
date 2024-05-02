@@ -40,4 +40,3 @@ resource "aws_subnet" "private_subnet" {
 }
 
 data "aws_availability_zones" "available" {}
-}
