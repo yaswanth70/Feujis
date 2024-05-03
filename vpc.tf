@@ -11,7 +11,7 @@ variable "vpc_cidr_block" {
 variable "subnet_cidr_prefix" {
   description = "The prefix for the subnet CIDR block"
   type        = number
-  default     = 32
+  default     = 16
 }
 
 resource "aws_vpc" "my_vpc1" {
