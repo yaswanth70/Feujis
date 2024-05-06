@@ -4,10 +4,8 @@ module "label_vpc" {
   context    = module.base_label.context
   name       = "vpc"
   attributes = ["main"]
-
 }
 
-#Selectivite to choce bit count 4 or 8 ( if selevetivie 8 the create difference 2 VPC in smae AZ vpc 4 bit and VPC2 8 bit )
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
@@ -27,79 +25,49 @@ module "subnet_addrs" {
     { name = "public", new_bits = 4 }
   ]
 }
-# =========================
-# Create your subnets here Same AZ-us-east-1c and Same region us-east-1c
-# =========================
 
-resource "aws_subnet" "public_subnet" {
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = module.subnet_addrs.network_cidr_blocks["public"]
-  map_public_ip_on_launch = true
+resource "aws_subnet" "subnet" {
+  count                  = 2
+  vpc_id                 = aws_vpc.main.id
+  cidr_block             = module.subnet_addrs.network_cidr_blocks[each.value.name]
+  map_public_ip_on_launch = each.value.name == "public"
   tags = merge(module.label_vpc.tags, {
-    "Name" = "public_subnet"
+    "Name" = "${each.value.name}_subnet"
   })
   availability_zone = data.aws_availability_zone.subnet_az.name
 }
-
-resource "aws_subnet" "private_subnet" {
-  vpc_id     = aws_vpc.main.id
-  cidr_block = module.subnet_addrs.network_cidr_blocks["private"]
-  tags = merge(module.label_vpc.tags, {
-    "Name" = "private_subnet"
-  })
-  availability_zone = data.aws_availability_zone.subnet_az.name
-
-}
-
-#internet gateway & route tables
 
 resource "aws_internet_gateway" "public_iGW" {
-
   vpc_id = aws_vpc.main.id
   tags = merge(module.label_vpc.tags, {
     "Name" = "public_iGW"
   })
 }
 
-resource "aws_route_table" "public_rt" {
+resource "aws_route_table" "rt" {
+  count = 2
 
   vpc_id = aws_vpc.main.id
   route {
-    cidr_block = "0.0.0.0/0"
+    cidr_block = count.index == 0 ? "0.0.0.0/0" : "0.0.0.0/1"
     gateway_id = aws_internet_gateway.public_iGW.id
   }
   tags = merge(module.label_vpc.tags, {
-    "Name" = "public_route_table"
+    "Name" = count.index == 0 ? "public_route_table" : "private_route_table"
   })
 }
 
-resource "aws_route_table_association" "public_rt_association" {
+resource "aws_route_table_association" "rt_association" {
+  count = 2
 
-  subnet_id      = aws_subnet.public_subnet.id
-  route_table_id = aws_route_table.public_rt.id
-
+  subnet_id      = aws_subnet.subnet[count.index].id
+  route_table_id = aws_route_table.rt[count.index].id
 }
 
-resource "aws_route_table" "private_rt" {
-
-  vpc_id = aws_vpc.main.id
-  tags = merge(module.label_vpc.tags, {
-    "Name" = "private_route_table"
-  })
-}
-
-resource "aws_route_table_association" "private_rt_association" {
-
-  subnet_id      = aws_subnet.private_subnet.id
-  route_table_id = aws_route_table.private_rt.id
-
-}
 resource "aws_nat_gateway" "nat-GW" {
-
   allocation_id = aws_eip.elastic-ip-nat-GW.id
-  subnet_id     = aws_subnet.public_subnet.id
-
-  depends_on = [aws_eip.elastic-ip-nat-GW]
+  subnet_id     = aws_subnet.subnet[0].id
+  depends_on    = [aws_eip.elastic-ip-nat-GW]
   tags = merge(module.label_vpc.tags, {
     "Name" = "Nat-Gateway"
   })
@@ -111,8 +79,9 @@ resource "aws_eip" "elastic-ip-nat-GW" {
     "Name" = "elastic-IP"
   })
 }
+
 resource "aws_route" "nat-GW-route" {
-  route_table_id         = aws_route_table.private_rt.id
+  route_table_id         = aws_route_table.rt[1].id
   nat_gateway_id         = aws_nat_gateway.nat-GW.id
-  destination_cidr_block = aws_subnet.public_subnet.cidr_block
+  destination_cidr_block = aws_subnet.subnet[1].cidr_block
 }
