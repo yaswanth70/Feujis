@@ -8,15 +8,6 @@ module "label_vpc" {
 }
 
 #Selectivite to choce bit count 4 or 8 ( if selevetivie 8 the create difference 2 VPC in smae AZ vpc 4 bit and VPC2 8 bit )
-module "subnet_addrs" {
-  source          = "hashicorp/subnets/cidr"
-  base_cidr_block = var.vpc_cidr
-  networks = [
-    { name = "private", new_bits = 4 },
-    { name = "public", new_bits = 4 }
-  ]
-}
-
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
@@ -28,6 +19,14 @@ data "aws_availability_zone" "subnet_az" {
   name = "us-east-1c"
 }
 
+module "subnet_addrs" {
+  source          = "hashicorp/subnets/cidr"
+  base_cidr_block = var.vpc_cidr
+  networks = [
+    { name = "private", new_bits = 4 },
+    { name = "public", new_bits = 4 }
+  ]
+}
 # =========================
 # Create your subnets here Same AZ-us-east-1c and Same region us-east-1c
 # =========================
