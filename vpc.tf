@@ -1,34 +1,27 @@
-module "label_vpc1" {
+module "label_vpc" {
   source     = "cloudposse/label/null"
   version    = "0.25.0"
   context    = module.base_label.context
-  name       = "vpc1"
+  name       = "vpc"
   attributes = ["main"]
 
 }
 
-#Selectivite to choce bit count 4 or 8 ( if selevetivie 8 the create difference 2 VPC in smae AZ VPC1 4 bit and VPC2 8 bit )
+#Selectivite to choce bit count 4 or 8 ( if selevetivie 8 the create difference 2 VPC in smae AZ vpc 4 bit and VPC2 8 bit )
 module "subnet_addrs" {
-  source = "hashicorp/subnets/cidr"
-
-  base_cidr_block = var.vpc1_cidr
+  source          = "hashicorp/subnets/cidr"
+  base_cidr_block = var.vpc_cidr
   networks = [
-    {
-      name     = "private"
-      new_bits = 4
-    },
-    {
-      name     = "public"
-      new_bits = 4
-    }
+    { name = "private", new_bits = 4 },
+    { name = "public", new_bits = 4 }
   ]
 }
 
-resource "aws_vpc1" "main" {
-  cidr_block           = var.vpc1_cidr
+resource "aws_vpc" "main" {
+  cidr_block           = var.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
-  tags                 = module.label_vpc1.tags
+  tags                 = module.label_vpc.tags
 }
 
 data "aws_availability_zone" "subnet_az" {
@@ -40,19 +33,19 @@ data "aws_availability_zone" "subnet_az" {
 # =========================
 
 resource "aws_subnet" "public_subnet" {
-  vpc1_id                  = aws_vpc1.main.id
+  vpc_id                  = aws_vpc.main.id
   cidr_block              = module.subnet_addrs.network_cidr_blocks["public"]
   map_public_ip_on_launch = true
-  tags = merge(module.label_vpc1.tags, {
+  tags = merge(module.label_vpc.tags, {
     "Name" = "public_subnet"
   })
   availability_zone = data.aws_availability_zone.subnet_az.name
 }
 
 resource "aws_subnet" "private_subnet" {
-  vpc1_id     = aws_vpc1.main.id
+  vpc_id     = aws_vpc.main.id
   cidr_block = module.subnet_addrs.network_cidr_blocks["private"]
-  tags = merge(module.label_vpc1.tags, {
+  tags = merge(module.label_vpc.tags, {
     "Name" = "private_subnet"
   })
   availability_zone = data.aws_availability_zone.subnet_az.name
@@ -63,20 +56,20 @@ resource "aws_subnet" "private_subnet" {
 
 resource "aws_internet_gateway" "public_iGW" {
 
-  vpc1_id = aws_vpc1.main.id
-  tags = merge(module.label_vpc1.tags, {
+  vpc_id = aws_vpc.main.id
+  tags = merge(module.label_vpc.tags, {
     "Name" = "public_iGW"
   })
 }
 
 resource "aws_route_table" "public_rt" {
 
-  vpc1_id = aws_vpc1.main.id
+  vpc_id = aws_vpc.main.id
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.public_iGW.id
   }
-  tags = merge(module.label_vpc1.tags, {
+  tags = merge(module.label_vpc.tags, {
     "Name" = "public_route_table"
   })
 }
@@ -90,8 +83,8 @@ resource "aws_route_table_association" "public_rt_association" {
 
 resource "aws_route_table" "private_rt" {
 
-  vpc1_id = aws_vpc1.main.id
-  tags = merge(module.label_vpc1.tags, {
+  vpc_id = aws_vpc.main.id
+  tags = merge(module.label_vpc.tags, {
     "Name" = "private_route_table"
   })
 }
@@ -108,14 +101,14 @@ resource "aws_nat_gateway" "nat-GW" {
   subnet_id     = aws_subnet.public_subnet.id
 
   depends_on = [aws_eip.elastic-ip-nat-GW]
-  tags = merge(module.label_vpc1.tags, {
+  tags = merge(module.label_vpc.tags, {
     "Name" = "Nat-Gateway"
   })
 }
 
 resource "aws_eip" "elastic-ip-nat-GW" {
-  domain = "vpc1"
-  tags = merge(module.label_vpc1.tags, {
+  domain = "vpc"
+  tags = merge(module.label_vpc.tags, {
     "Name" = "elastic-IP"
   })
 }
