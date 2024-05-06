@@ -27,12 +27,12 @@ module "subnet_addrs" {
 }
 
 resource "aws_subnet" "subnet" {
-  count                  = 2
+  count                  = length(module.subnet_addrs.networks)
   vpc_id                 = aws_vpc.main.id
-  cidr_block             = module.subnet_addrs.network_cidr_blocks[each.value.name]
-  map_public_ip_on_launch = each.value.name == "public"
+  cidr_block             = module.subnet_addrs.network_cidr_blocks[count.index]
+  map_public_ip_on_launch = module.subnet_addrs.networks[count.index].name == "public"
   tags = merge(module.label_vpc.tags, {
-    "Name" = "${each.value.name}_subnet"
+    "Name" = "${module.subnet_addrs.networks[count.index].name}_subnet"
   })
   availability_zone = data.aws_availability_zone.subnet_az.name
 }
