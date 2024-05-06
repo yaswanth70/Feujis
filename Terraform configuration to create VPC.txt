@@ -1,0 +1,41 @@
+Terraform configuration to create VPCs, subnets, and related networking components in AWS. 
+
+1.Labeling the VPC:
+A module is used to label the VPC with tags. This helps in managing and organizing resources.
+
+2.Creating Subnets:
+A module named subnet_addrs is used to generate CIDR blocks for subnets based on the specified VPC CIDR block.
+Two subnets, private and public, are created within the VPC with different CIDR blocks.
+
+3.Creating VPC:
+An AWS VPC named aws_vpc1.main is created with the specified CIDR block, enabling DNS support and hostnames.
+It's tagged with labels from the label_vpc1 module.
+
+4.Defining Availability Zone:
+An AWS availability zone is specified for subnet creation.
+
+5.Creating Subnet Resources:
+Two subnets, private and public, are created within the VPC.
+They are tagged appropriately and associated with the specified availability zone.
+
+6.Creating Internet Gateway (IGW):
+An Internet Gateway named public_iGW is created and attached to the VPC to enable communication with the internet.
+It's tagged accordingly.
+
+7.Creating Route Tables:
+Route tables are created for both public and private subnets.
+The public route table has a route allowing traffic to 0.0.0.0/0 through the Internet Gateway.
+Both route tables are tagged appropriately.
+
+8.Associating Route Tables:
+Route tables are associated with their respective subnets to direct traffic properly.
+
+9.Creating Elastic IP (EIP):
+An Elastic IP address named elastic-ip-nat-GW is created for use with the NAT Gateway.
+It's tagged accordingly.
+
+10.Creating NAT Gateway:
+A NAT Gateway named nat-GW is created in the public subnet and associated with the Elastic IP.
+It's tagged accordingly.
+11.Creating Route for NAT Gateway:
+A route is added to the private route table, directing traffic destined for the internet (0.0.0.0/0) through the NAT Gateway.
